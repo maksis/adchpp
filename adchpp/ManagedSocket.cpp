@@ -28,8 +28,8 @@ namespace adchpp {
 
 using namespace std;
 using namespace std::tr1;
-using std::tr1::placeholders::_1;
-using std::tr1::placeholders::_2;
+using namespace std::tr1::placeholders;
+
 using namespace boost::asio;
 
 ManagedSocket::~ManagedSocket() throw() {
@@ -98,7 +98,6 @@ void ManagedSocket::completeWrite(const boost::system::error_code& ec, size_t by
 		Stats::sendCalls++;
 
 		while(bytes > 0) {
-			printf("%d buffers\n", outBuf.size());
 			BufferPtr p = *outBuf.begin();
 			if(p->size() <= bytes) {
 				bytes -= p->size();
