@@ -1,0 +1,457 @@
+= Getting started with ADCH++ 
+Author: Toast <swe_toast@users.sourceforge.com> 
+Document Version 0.2
+////
+0.1 
+* Inital Documentation
+0.2 
+*Changed Image
+*Added Example
+0.2.1
+*Removed manual TOC for generated TOC along with icon fixes (asciidoc -a data-uri -a icons -a toc -a max-width=55em user_guide.txt)
+*Removed Logo
+*Removed some unnessary pictures of the installer
+*Rewrote luascript and installation part
+////
+
+== Installation
+
+First off you have to choose whether to run a debug or a release build of adchpp, the difference between a debug and release build is the following a debug build shows the protocol at work like session id etc.
+
+_This is how a debug build looks_
+
+image:images/img_adchpp_debug_build.png[]
+
+_This is how a release build looks_
+
+image:images/img_adchpp_release_build.png[]
+
+=== Download
+
+The ADCH\++ setup can be found at the Sourceforge web site located at http://sourceforge.net/projects/adchpp/. 
+On that page there are links to the ADCH++ distribution.
+
+    * An EXE file that gives the users an uninstaller option.
+    * A ZIP file that contains the binary and the configuration files.
+    * A ZIP file with the source for that distribution for those that want to compile themselves.
+
+=== Installation on Windows
+
+If you are using the zip file then go head and skip this part but if your using the installer for the program and feel uncertain here is a little help secrtion.
+
+The installation consists of three main screens.
+
+. Welcome Screen
+. License Screen
+. Installation Path
+
+CAUTION: Windows Vista and Windows 7 should not install to program files directory if they don't know how to workaround UAC and store configuration files with http://vistaonwindows.com/environment_variables.html[windows environment variables] if you feel that its too hard just install it to another folder where UAC doesn't apply a good alternative path is: _c:\Users\<Your Account>\_
+
+=== Installing on Linux
+
+Here is a example on how you can install ADCH++ on Linux the example is for Linux distributions.
+
+	wget https://sourceforge.net/projects/adchpp/files/ADCH%2B%2B%20Unstable/ADCH%2B%2B%202.4/ADCH%2B%2B.2.4-noarch-src.zip
+	
+	Debian: sudo apt-get install python scons swig gcc-c++ openssl-dev readline-dev
+	
+	Redhat: yum install gcc-c++ python scons swig openssl-devel readline-devel
+	
+	cd adchpp
+	scons mode=release
+	cd build/release-default/bin/
+	mkdir config
+	mkdir scripts
+	cp -rf plugins/Script/examples build/release-default/bin/scripts
+	cp -rf etc/ build/release-default/bin/config
+			
+== Basic configuration
+
+All the settings for ADCH\++ is stored in the config folder in ADCH++. Open up adchpp.xml in a text editor (such as Notepad) and start changing values to your wishes.
+
+TIP: Linux users should enable the following line in adchpp.xml <!--Plugins Path="/home/arnetheduck/adchpp/lib/adchpp/"--> by removing !-- and -- from the line and editing the path to your adchpp directory.
+
+=== MOTD (Message of the day)
+
+The MOTD is stored within motd.txt so enter your text into it and it will show upon login for everyone who enters your hub.
+
+=== Using Transport Layer Security (TLS)
+
+To create secure connections, set TLS="1" and define the following (preferably absolute)
+paths: Certificate, PrivateKey, TrustedPath, DHParams. An example secure server setting:
+
+insert this to adchpp.xml on the server line:
+
+	<Server Port="2780" TLS="1" Certificate="certs/cacert.pem" PrivateKey="certs/privkey.pem" TrustedPath="certs/trusted/" DHParams="certs/dhparam.pem"/>
+
+Simple OpenSSL commands to generate files used for secure connections:
+
+	openssl genrsa -out privkey.pem 2048
+	openssl req -new -x509 -key privkey.pem -out cacert.pem -days 1095
+	openssl dhparam -outform PEM -out dhparam.pem 1024
+
+Alternatively, you can use the cert generator contributed on:
+
+http://launchpadlibrarian.net/31960965/Cert_Generator.7z
+
+http://builds.adcportal.com/adchpp/cert_generator/adchpp_cert_generator.7z
+
+Windows:
+http://www.slproweb.com/products/Win32OpenSSL.html
+
+Linux Debian/Ubuntu:
+	sudo install apt-get openssl
+
+Linux Redhat:
+	yum install openssl
+
+TIP: Remember that if you have specified TLS=1 in the config that you need to connect with the prefix adcs://
+	
+=== Additional settings
+
+There are also additional settings that can only be enabled via hub commands, which are stored in settings.txt (this guide will show how to make that further down).
+
+== Accounts
+
+All the user accounts are stored in users.txt. This guide will explain how to create a user account. "First, edit your adchpp.xml, located in the config folder, and enter ports and a name for the hub. Then, start it up and enter:
+
+	+regme <your desired password>
+
+example:
+
+	[09-10-02][21:37:19] *** Connecting to adc://localhost:411
+	[09-10-02][21:37:19] *** Connected
+	[09-10-02][21:37:19] <ADCH++> MOTD content goes here
+	[09-10-02][21:37:56] <Testuser> +regme test
+	[09-10-02][21:37:26] <ADCH++> You're now registered
+
+example users.txt
+
+	[{"password":"test","nick":"Testuser","level":1,"cid":"ABCDEFGHIJ1KLMNOPQRSTUVXYZA23BCDEFGHIJK"}]
+
+Change this to:
+	
+	[{"password":"test","nick":"Testuser","level":10,"cid":"ABCDEFGHIJ1KLMNOPQRSTUVXYZA23BCDEFGHIJK"}]
+
+reconnect to the hub again and now you will have access to administrator commands so you can reg new admins inside the hub with the command:
+
+	+regnick <nick> <password> <level>
+
+== Scripts
+
+Things like scripts can be enabled from scripts.xml stored in the config folder the scripts themselves are stored in the Scripts folder.
+
+How to turn off scripts in scripts.xml:
+
+example:
+	
+	<Script>motd.lua</Script>
+
+Change to:
+
+	<!--Script>motd.lua</Script-->
+
+or delete the line
+
+IMPORTANT: Linux Users make your your path to the scripts folder is an absolute path.
+
+=== Making new scripts
+In order to help scripters get a clue of how ADCH++ interacts with lua we made an example file thats included in this document.
+
+----
+-- This is an example script that scripters might want to use as a basis for their work. It
+-- documents the bare minimum needed to make an Lua script interface with ADCH++.
+
+-- For more detailed information, peeking into other, more evolved (but less documented) example
+-- scripts as well as the Doxygen documentation of ADCH++ <http://adchpp.sourceforge.net/doc> would
+-- be a good idea.
+
+-- Generally, to reach member "bar" of the class "foo" of ADCH++, one has to use: adchpp.foo_bar.
+-- Examples: adchpp.Util_getCfgPath(), adchpp.AdcCommand_CMD_MSG, adchpp.Entity_STATE_NORMAL...
+
+-- When manipulating Entity objects, it can be useful to convert them to Client objects (which
+-- are aware of socket features such as a send method) by using:
+-- local client = entity:asClient()
+
+-- Feel free to use <https://answers.launchpad.net/adchpp> or <www.adcportal.com> if you need help.
+
+-- The global functions of Lua are privately imported into "base"; therefore, be sure to always
+-- reference it when calling these functions; eg base.print("blah"), base.pcall(protected_func)...
+local base = _G
+
+module("example") -- Give each module a unique name so they don't clash.
+
+-- Import the ADCH++ Lua DLL (luadchpp.dll).
+base.require('luadchpp')
+local adchpp = base.luadchpp
+
+-- Import various base sets of Lua methods. Only import those you need for your specific module.
+local io = base.require('io')
+local math = base.require('math')
+local os = base.require('os')
+local string = base.require('string')
+local table = base.require('table')
+
+-- Import some utilitary Lua Scripts; these don't need to be explicitly loaded by ADCH++ (eg if
+-- using the adchppd daemon, they don't need to be referenced in Scripts.xml).
+local autil = base.require('autil')
+local json = base.require('json')
+
+-- Cache pointers to some managers of ADCH++ that we frequently use.
+local cm = adchpp.getCM() -- ClientManager
+local pm = adchpp.getPM() -- PluginManager
+
+-- Listeners to connect to ADCH++. Define one unique identifier for each listener (i chose to call
+-- them example_1, example_2 and so on) to make sure the variable holding the listener doesn't get
+-- collected by Lua's garbage collector until the program is over.
+
+-- ClientManager::signalConnected: called after an Entity entity has connected.
+example_1 = cm:signalConnected():connect(function(entity)
+	-- Process signalConnected here.
+end)
+
+-- ClientManager::signalReceive: called when an AdcCommand cmd is received from Entity entity.
+example_2 = cm:signalReceive():connect(function(entity, cmd, ok)
+	local res = function(entity, cmd, ok)
+		if not ok then
+			return ok
+		end
+		-- Process signalReceive here.
+		-- Return true to let the command be dispatched, false to block it.
+	end
+	if not res then
+		cmd:setPriority(adchpp.AdcCommand_PRIORITY_IGNORE)
+	end
+	return res
+end)
+
+-- ClientManager::signalState: called after the state of an online Entity entity has changed.
+example_3 = cm:signalState():connect(function(entity)
+	-- Process signalState here.
+end)
+
+-- ClientManager::signalDisconnected: called after an Entity entity has disconnected.
+example_4 = cm:signalDisconnected():connect(function(entity)
+	-- Process signalDisconnected here.
+end)
+
+-- PluginManager::getCommandSignal(string): called when a +command managed by another plugin is
+-- being executed.
+example_5 = pm:getCommandSignal("blah"):connect(function(entity, list, ok)
+	if not ok then
+		return ok
+	end
+	-- Process getCommandSignal here.
+	-- Return true to let the command be executed, false to block it.
+end)
+----
+NOTE: Additional documentation can be found at (http://adchpp.sourceforge.net/doc) for anyone that wishes to contribute scripts for ADCH\++ submit new scripts either at (https://bugs.launchpad.net/adchpp) or (http://www.adcportal.com) ADCH++ supports LUA 5.1.4 (http://www.lua.org/docs.html).
+
+== Working with hub commands
+
+A simple way to find out how stuff works is by typing +help as we promised the guide will show additional configuration you should type
+
+	+help cfg
+
+example:
+
+	+cfg name value - change hub configuration, use "+help cfg" to list all variables (aliases: +changecfg, +changeconfig, +changevar, +config, +setcfg, +setconfig, +setvar, +var)
+
+List of all settings variables:
+
+	history_default - current value: 50 - number of messages to display in +history if the user doesn't select anything else
+	history_max - current value: 500 - number of messages to keep for +history
+	history_prefix - current value: [%Y-%m-%d %H:%M:%S] - prefix to put before each message in +history
+	hubname - current value: DCDev Public - hub name (aliases: changehubname, sethubname)
+	maxmsglength - current value: 0 - maximum number of characters allowed per chat message, 0 = no limit (aliases: maxmessagelength)
+	maxusers - current value: -1 - maximum number of non-registered users, -1 = no limit, 0 = no unregistered users allowed (aliases: max_users, usermax, user_max, usersmax, users_max)
+	topic - current value: get your build today at http://builds.adcportal.com - hub topic (aliases: changetopic, hubdescription, hubtopic, settopic)
+
+These are all settings stored in settings.txt.
+
+=== Setting the hub to private
+
+Here is how you set your hub to private so that registered users only can access
+
+	+cfg maxusers 0
+
+The variable "maxusers" has the following description:
+
+	maxusers - current value: -1 - maximum number of non-registered users, -1 = no limit, 0 = no unregistered users allowed (aliases: max_users, usermax, user_max, usersmax, users_max)
+
+now if anyone is trying to access the hub without an account they will receive this message
+
+	[09-10-02][22:07:09] <ADCH++> Only registered users are allowed in here
+
+=== Setting the hub to register to download
+
+So what does reg to download mean well its pretty simple if user is a guest and the reg to download lines are inserted they need to get an account on the server to be able to download anything from others by using the following command
+
+	+regme <password>
+
+locate your access.lua in the script folder and edit the following line:
+
+	local command_min_levels = {
+	-- [adchpp.AdcCommand_CMD_MSG] = 2
+
+change this line to:
+
+	local command_min_levels = {
+	[adchpp.AdcCommand_CMD_CTM] = 1,
+	[adchpp.AdcCommand_CMD_RCM] = 1,
+	[adchpp.AdcCommand_CMD_SCH] = 1
+
+CTM = connect to me
+RCM = reverse ctm
+SCH = search
+MSG = message
+
+Profiles levels range from 1-10
+
+1 being registered on server
+10 being hub administrator
+
+=== Working with banmsgre
+
+This is a very powerful system for getting rid of unwanted spam, it uses regular expressions for detecting unwanted content in your hub it requires knowledge of how to write a regular expression string so it might not be for the beginners.
+
+	+banmsgre <regexp> <reason> <time>
+	
+Example:
+
+	+banmsgre <http://www\.spam\.com> unwanted spam 99
+
+For more information about regular expression go to this site:
+http://www.regular-expressions.info/
+
+== Running ADCH++ with paramters
+
+	Usage: adchpp [[-c <configdir>] [-d]] | [-v] | [-h]
+	
+* -c specifies a path to configuration directory
+* -d deamon service _(Linux only)_
+* -i service mode _(Windows only)_
+* -v version number
+* -h help message
+	
+	examples:
+	(Linux)
+	adchppd -c /home/test/adchpp/bin/config/
+	(Windows)
+	adchppd.exe -c c:/users/test/adchpp/bin/config/
+	(Linux)
+	adchppd -d
+	(Windows)
+	adchppd.exe -i adchpp
+	
+== Issues and problems
+Not every software is perfect they all got flaws and can preform wierd or unwanted features and its very important that the developer is aware of such features, 
+so how do you (the user) fit into this well in the event that you find a bug try and recreate it so you have a consistant log of the problem so that you can give feedback to the developer.
+
+=== Hub crash (core dumps)
+
+In the event of a total crash the hubsoft generates file called adchppd.RPT in folder where the binary is located, here is how an adchppd.RPT may look like:
+
+	-------------------
+
+	Error occured on Sunday, September 27, 2009 at 11:08:23.
+
+	H:\BZR Stuff\adchpp\build\release-mingw\bin\adchppd.exe caused a Breakpoint at location 6905059f in module H:\BZR Stuff\adchpp\build\release-mingw\bin\Bloom.dll.
+
+	Registers:
+	eax=00000080 ebx=02bffca0 ecx=76740849 edx=00000000 esi=69059b05 edi=02bffcd7
+	eip=6905059f esp=02bffc94 ebp=02bffd1c iopl=0         nv up ei pl nz na pe nc
+	cs=0023  ss=002b  ds=002b  es=002b  fs=0053  gs=002b             efl=00000202
+
+	Call stack:
+	6905059F  H:\BZR Stuff\adchpp\build\release-mingw\bin\Bloom.dll:6905059F  __w32sp_grab  ../../../../gcc-4.4.1/libgcc/../gcc/config/i386/w32-sharedptr.c:15
+	6904F764  H:\BZR Stuff\adchpp\build\release-mingw\bin\Bloom.dll:6904F764  _Unwind_SjLj_Register  ../../../../gcc-4.4.1/libgcc/../gcc/unwind-sjlj.c:169
+	69041657  H:\BZR Stuff\adchpp\build\release-mingw\bin\Bloom.dll:69041657  __tcf_1  c:/dev tools/mingw/bin/../lib/gcc/mingw32/4.4.1/include/c++/bits/basic_string.h:281
+	69041086  H:\BZR Stuff\adchpp\build\release-mingw\bin\Bloom.dll:69041086BFD 2.13.90 20030111 assertion fail ../../src/bfd/libbfd.c:584Dwarf Error: found dwarf version '56067', this reader only handles version 2 information.
+	69041106  H:\BZR Stuff\adchpp\build\release-mingw\bin\Bloom.dll:69041106
+	77C097C0  C:\Windows\SysWOW64\ntdll.dll:77C097C0  RtlQueryEnvironmentVariable
+	77C1DCE2  C:\Windows\SysWOW64\ntdll.dll:77C1DCE2  LdrShutdownProcess
+	77C1DB84  C:\Windows\SysWOW64\ntdll.dll:77C1DB84  RtlExitUserProcess
+	7625699E  C:\Windows\syswow64\kernel32.dll:7625699E  AttachConsole
+	761B3677  C:\Windows\syswow64\kernel32.dll:761B3677  BaseThreadInitThunk
+	77C09D72  C:\Windows\SysWOW64\ntdll.dll:77C09D72  RtlInitializeExceptionChain
+	77C09D45  C:\Windows\SysWOW64\ntdll.dll:77C09D45  RtlInitializeExceptionChain
+
+TIP: Always submit adchppd.RPT to the bugtracker located at launchpad https://bugs.launchpad.net/adchpp
+	
+=== LUA errors
+
+Sometimes lua scripts can preform errors and that will show up in the windows of ADCH++ while its running
+
+	access.lua:491: attempt to concatenate global 'reason' (a nil value)
+	stack traceback:
+	access.lua:491: in function 'dump_banned'
+	access.lua:579: in function <access.lua:496>
+	(tail call): ?
+	access.lua:1652: in function <access.lua:1651>
+
+TIP: If you get similar errors while running your hubsoft do report them at the official bug tracker at launchpad https://bugs.launchpad.net/adchpp
+
+=== Missing dlls
+
+If your using the MSVC Builds you might get a error message that certain DLL files are missing there is a simple solution you need to download and install these packages.
+
+http://www.microsoft.com/downloads/details.aspx?familyid=A5C84275-3B97-4AB7-A40D-3802B2AF5FC2[Microsoft Visual C\++ 2008 SP1 Redistributable Package (x86)]
+
+http://www.microsoft.com/downloads/details.aspx?familyid=BA9257CA-337F-4B40-8C14-157CFDFFEE4E[Microsoft Visual C\++ 2008 SP1 Redistributable Package (x64)]
+
+=== Is something still unclear ?
+
+Well lucky you then cause we have an answer tracker for questions
+
+https://answers.launchpad.net/adchpp you could additionally use ADCPortal also for questions http://www.adcportal.com
+
+=== So what extensions does this hubsoft support
+
+*BLOM* - this extension that allows hub software to create a map (bloom filter) of the shared files on the hub, but with minimal effort, e.g. the hub doesn't keep a list of files, but a filter that never produces false negatives but only possible false positives. This can potentially save bandwidth and effort on the client side.
+
+*UCMD* - User commands are used to send hub-specific commands to the client which provide useful shortcuts for the user.
+
+*ADCS* - ADCS is an extension that has the goal of adding the TLS/SSL layer just over the TCP layer and beneath the application layer (where ADC runs). This way, the ADC protocol remains unchanged while the connections are encrypted.
+
+NOTE: _All of these extensions are early implementations not final since they are in draft mode (2009-10-15)_
+
+== Compiling and testing
+
+This part is not recommended for the newbie user this is for the novice or expert user this part will tell you how to compile
+
+A C\++ compiler, such as:
+    
+	* GCC 4.4+ Linux or http://www.mingw.org or Microsoft Visual C++ 9.0 (2008) with at least Service Pack 1 (see notes)
+    * SCons 0.98.5 http://www.scons.org
+    * SWIG 1.3.39 http://www.swig.org
+    * Python 2.5 (Windows) or 2.4+ (Linux) http://www.python.org
+    * Optional: OpenSSL 1.0.0-beta3 http://www.openssl.org
+
+MinGW Builds
+
+	to build a debug version use: scons
+	to build a release version use: scons mode=release
+
+MSVC Builds
+
+	to build a x86 debug version use: scons tools=default
+	to build a x86 release version use: scons tools=default mode=release
+	to build a x64 debug version use: scons tools=default arch=x64
+	to build a x64 release version use: scons tools=default mode=release arch=x64
+	
+IMPORTANT: ADCH\++ requires Microsoft Visual C++ 9.0 (2008) SP1 Hotfix to compile, https://connect.microsoft.com/VisualStudio/Downloads/DownloadDetails.aspx?DownloadID=17034&amp;wa=wsignin1.0[click here] to get it
+
+=== Right on the bleeding edge
+
+We have an open bzr repository that we use for publishing the source to ADCH++ its located at launchpad https://code.launchpad.net/adchpp
+
+It requires that you the user have bzr tools installed
+http://bazaar-vcs.org/en/
+
+we also have a build archive for windows users that don't want to install a lot of compile tools themselves its located at
+http://builds.adcportal.com/
+
+== Congratulations!
+If you have read this far and successfully followed the instruction, congratulations. You now know the basics of using ADCH\+\+. What has been described on this page is the bare minimum needed to use ADCH++. There are many other features. It is highly recommended that you explore the program and try new functions for yourself. Most of all, enjoy yourself. Good luck and happy sharing.
+// vim: set syntax=asciidoc:

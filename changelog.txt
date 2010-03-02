@@ -1,0 +1,33 @@
+* Improve Lua scripts: various bug fixes, support PING
+* Clients are disconnected with the DI flag of QUI
+* Update to Lua 5.1.4
+* Update to boost 1.40
+* Better support of Python extensions
+* Add an icon and version info to the Windows daemon
+* Allow local IPs
+* Bloom plugin: filter more TTH searches
+* [L#427706] Fix some crashes
+* Hub will automatically reject new users if its having bandwidth problems
+* [L#502280] Fix Windows service
+* Accept relative paths in config files
+* [L#518972] Fix python memory leak
+
+-- 2.4 2008-10-02 --
+* Improve Lua scripts
+
+-- 2.3 2008-09-29 --
+* Fix service install on Windows
+* Fix plugins not being unloaded correctly
+* Use boost asio for sockets instead of home brew
+* TLS support
+* Fix a few crashes here and there
+* Improve Lua scripts
+
+-- 2.2 2008-02-12 --
+* access.lua: fixed message type for MSG
+* Some minor socket fixes
+* Initial Bloom filter implementation
+* Fixed 100% cpu / infinite resend bug
+
+-- 2.1 2008-01-06 --
+* Initial ADC 1.0 release
