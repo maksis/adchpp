@@ -1,0 +1,9 @@
+Import('dev source_path setLuaEnv')
+
+env, target, sources = dev.prepare_build(source_path, 'lfs', source_glob = '*.c')
+env['SHLIBPREFIX'] = ''
+setLuaEnv(env)
+
+ret = env.SharedLibrary(target, sources)
+
+Return('ret')

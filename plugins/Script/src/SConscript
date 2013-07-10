@@ -1,0 +1,13 @@
+Import('dev source_path setLuaEnv')
+
+env, target, sources = dev.prepare_build(source_path, 'Script', shared_precompiled_header = 'stdinc')
+env['SHLIBPREFIX'] = ''
+
+env.Append(CPPPATH = ['.', '#'])
+env.Append(LIBS = ['adchpp'])
+
+setLuaEnv(env)
+
+ret = env.SharedLibrary(target, sources)
+
+Return('ret')
